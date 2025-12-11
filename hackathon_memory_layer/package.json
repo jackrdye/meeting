@@ -1,0 +1,20 @@
+{
+  "name": "hackathon-memory-layer",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Standalone meeting memory layer (TypeScript) for Next.js monoliths",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "demo": "tsx src/demo.ts"
+  },
+  "dependencies": {
+    "openai": "^4.66.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  }
+}

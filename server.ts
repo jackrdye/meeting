@@ -1,12 +1,12 @@
-import { createServer } from 'http';
-import { parse } from 'url';
-import next from 'next';
-import { WebSocketServer, WebSocket } from 'ws';
-import { createConversation, addTranscript, endConversation } from './lib/db';
+import { createServer } from "http";
+import { parse } from "url";
+import next from "next";
+import { WebSocketServer, WebSocket } from "ws";
+import { createConversation, addTranscript, endConversation } from "./lib/db";
 
-const dev = process.env.NODE_ENV !== 'production';
-const hostname = 'localhost';
-const port = 3000;
+const dev = process.env.NODE_ENV !== "production";
+const hostname = process.env.HOSTNAME || "0.0.0.0";
+const port = parseInt(process.env.PORT || "3000", 10);
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
@@ -17,26 +17,26 @@ app.prepare().then(() => {
       const parsedUrl = parse(req.url!, true);
       await handle(req, res, parsedUrl);
     } catch (err) {
-      console.error('Error occurred handling', req.url, err);
+      console.error("Error occurred handling", req.url, err);
       res.statusCode = 500;
-      res.end('internal server error');
+      res.end("internal server error");
     }
   });
 
   // WebSocket Server
   const wss = new WebSocketServer({ server });
 
-  wss.on('connection', (ws: WebSocket) => {
-    console.log('Client connected to WebSocket');
+  wss.on("connection", (ws: WebSocket) => {
+    console.log("Client connected to WebSocket");
     let elevenLabsWs: WebSocket | null = null;
     let currentConversationId: string | null = null;
 
-    ws.on('message', (message: Buffer) => {
+    ws.on("message", (message: Buffer) => {
       try {
         const parsed = JSON.parse(message.toString());
 
         // START A NEW CONVERSATION
-        if (parsed.type === 'start_session') {
+        if (parsed.type === "start_session") {
           const newConv = createConversation({
             title: `Conversation ${new Date().toLocaleString()}`,
           });
@@ -44,15 +44,15 @@ app.prepare().then(() => {
 
           // Initialize ElevenLabs WebSocket
           try {
-            const elevenLabsUrl = 'wss://api.elevenlabs.io/v1/speech-to-text/realtime';
+            const elevenLabsUrl = "wss://api.elevenlabs.io/v1/speech-to-text/realtime";
             const apiKey = process.env.ELEVENLABS_API_KEY;
 
             if (!apiKey) {
-              console.error('ELEVENLABS_API_KEY not found');
+              console.error("ELEVENLABS_API_KEY not found");
               ws.send(
                 JSON.stringify({
-                  type: 'error',
-                  message: 'ElevenLabs API key not configured',
+                  type: "error",
+                  message: "ElevenLabs API key not configured",
                 })
               );
               return;
@@ -62,80 +62,80 @@ app.prepare().then(() => {
 
             elevenLabsWs = new WebSocket(elevenLabsUrl, {
               headers: {
-                'xi-api-key': apiKey,
+                "xi-api-key": apiKey,
               },
             });
 
-            elevenLabsWs.on('open', () => {
-              console.log('Connected to ElevenLabs WebSocket');
+            elevenLabsWs.on("open", () => {
+              console.log("Connected to ElevenLabs WebSocket");
               const initMessage = {
-                text: ' ',
+                text: " ",
                 voice_settings: { stability: 0.5, similarity_boost: 0.8 },
-                model_id: 'scribe_v2',
+                model_id: "scribe_v2",
               };
               elevenLabsWs?.send(JSON.stringify(initMessage));
               ws.send(
                 JSON.stringify({
-                  type: 'session_started',
+                  type: "session_started",
                   conversationId: currentConversationId,
                 })
               );
             });
 
-            elevenLabsWs.on('message', (data: Buffer) => {
+            elevenLabsWs.on("message", (data: Buffer) => {
               try {
                 const msg = JSON.parse(data.toString());
-                console.log('Received from ElevenLabs:', msg.type || 'Unknown Type');
+                console.log("Received from ElevenLabs:", msg.type || "Unknown Type");
 
-                if (msg.type === 'transcript' || msg.is_final) {
+                if (msg.type === "transcript" || msg.is_final) {
                   if (msg.text && currentConversationId) {
-                    console.log('Transcript Text:', msg.text);
-                    
+                    console.log("Transcript Text:", msg.text);
+
                     // Forward to client
-                    ws.send(JSON.stringify({ type: 'transcript', data: msg }));
+                    ws.send(JSON.stringify({ type: "transcript", data: msg }));
 
                     // Save final transcripts to DB
                     if (msg.is_final) {
                       const transcriptObj: any = {
                         id: Date.now().toString(),
                         conversationId: currentConversationId,
-                        role: 'user',
+                        role: "user",
                         content: msg.text,
                         timestamp: new Date().toISOString(),
                         isFinal: true,
-                        speaker: msg.speaker_id || 'Unknown',
+                        speaker: msg.speaker_id || "Unknown",
                       };
                       addTranscript(currentConversationId, transcriptObj);
                     }
                   }
                 } else {
-                  ws.send(JSON.stringify({ type: 'event', data: msg }));
+                  ws.send(JSON.stringify({ type: "event", data: msg }));
                 }
               } catch (e) {
-                console.error('Error parsing ElevenLabs message:', e);
+                console.error("Error parsing ElevenLabs message:", e);
               }
             });
 
-            elevenLabsWs.on('error', (err) => {
-              console.error('ElevenLabs socket error:', err);
+            elevenLabsWs.on("error", (err) => {
+              console.error("ElevenLabs socket error:", err);
               ws.send(
                 JSON.stringify({
-                  type: 'error',
-                  message: 'ElevenLabs Error: ' + err.message,
+                  type: "error",
+                  message: "ElevenLabs Error: " + err.message,
                 })
               );
             });
 
-            elevenLabsWs.on('close', (code, reason) => {
+            elevenLabsWs.on("close", (code, reason) => {
               console.log(`ElevenLabs socket closed. Code: ${code}, Reason: ${reason}`);
             });
           } catch (e) {
-            console.error('Connection failed:', e);
+            console.error("Connection failed:", e);
           }
         }
 
         // STOP SESSION
-        else if (parsed.type === 'stop_session') {
+        else if (parsed.type === "stop_session") {
           if (currentConversationId) {
             endConversation(currentConversationId);
           }
@@ -148,7 +148,7 @@ app.prepare().then(() => {
         else if (parsed.audio_data) {
           if (elevenLabsWs && elevenLabsWs.readyState === WebSocket.OPEN) {
             const inputAudioChunk = {
-              message_type: 'input_audio_chunk',
+              message_type: "input_audio_chunk",
               audio_base_64: parsed.audio_data,
               sample_rate: 16000,
             };
@@ -156,12 +156,12 @@ app.prepare().then(() => {
           }
         }
       } catch (e) {
-        console.error('Error parsing message:', e);
+        console.error("Error parsing message:", e);
       }
     });
 
-    ws.on('close', () => {
-      console.log('Client disconnected');
+    ws.on("close", () => {
+      console.log("Client disconnected");
       if (elevenLabsWs) {
         elevenLabsWs.close();
       }
@@ -173,4 +173,3 @@ app.prepare().then(() => {
     console.log(`> WebSocket server running`);
   });
 });
-
