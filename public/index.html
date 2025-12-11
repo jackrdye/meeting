@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Scribe | AI Meeting Assistant</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+        <h1>Audio Scribe</h1>
+    </header>
+
+    <!-- Left Sidebar: History -->
+    <aside id="sidebar-left">
+        <div class="sidebar-header">
+            <span>Conversations</span>
+            <button id="new-conv-btn">+</button>
+        </div>
+        <div id="history-list">
+            <!-- Dynamically populated -->
+        </div>
+    </aside>
+
+    <!-- Main Stage -->
+    <main>
+        <!-- Layer 1: Live Conversation View -->
+        <section id="view-live" class="view-section active">
+            <div id="visualizer-container">
+                <div id="status-pill">
+                    <div id="status-indicator"></div>
+                    <span id="status-text">Ready</span>
+                </div>
+                <canvas id="visualizer"></canvas>
+            </div>
+
+            <div id="live-transcript" class="transcript-container">
+                <div class="message info">Start a new conversation...</div>
+            </div>
+
+            <div id="controls">
+                <button id="recordBtn">
+                    <span id="recordIcon">●</span>
+                    <span id="recordText">Start Conversation</span>
+                </button>
+                <button id="finishBtn" disabled>
+                    <span>⏹</span> End
+                </button>
+            </div>
+        </section>
+
+        <!-- Layer 2: Detail View (History) -->
+        <section id="view-detail" class="view-section">
+            <div class="detail-header">
+                <div class="detail-title">
+                    <h2 id="detail-title-text">Morning Standup</h2>
+                    <div class="detail-meta" id="detail-meta-text">Today, 9:00 AM • 15 mins</div>
+                </div>
+                <button id="close-detail-btn" style="padding: 6px 12px; font-size:0.8rem;">Close</button>
+            </div>
+
+            <div id="detail-transcript" class="transcript-container">
+                <!-- Loaded content -->
+            </div>
+
+            <div class="ask-box">
+                <input type="text" id="ask-input" placeholder="Ask about this conversation...">
+                <button id="ask-btn">Ask AI</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Right Sidebar: Insights -->
+    <aside id="sidebar-right">
+        <div class="sidebar-header">Insights</div>
+
+        <div class="insight-card">
+            <h4>Summary</h4>
+            <p id="insight-summary" style="font-size: 0.85rem; color: #d1d5db; line-height: 1.4; padding: 0 5px;">
+                Select a conversation to see summary.
+            </p>
+        </div>
+
+        <div class="insight-card">
+            <h4>Key Points</h4>
+            <ul class="insight-list" id="insight-points">
+                <li>--</li>
+            </ul>
+        </div>
+
+        <div class="insight-card">
+            <h4>Action Items</h4>
+            <ul class="insight-list" id="insight-actions">
+                <li>--</li>
+            </ul>
+        </div>
+    </aside>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
